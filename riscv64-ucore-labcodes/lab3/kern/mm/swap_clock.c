@@ -33,11 +33,14 @@ list_entry_t pra_list_head, *curr_ptr;
 static int
 _clock_init_mm(struct mm_struct *mm)
 {     
-     /*LAB3 EXERCISE 4: YOUR CODE*/ 
+     /*LAB3 EXERCISE 4: 2113997*/ 
      // 初始化pra_list_head为空链表
      // 初始化当前指针curr_ptr指向pra_list_head，表示当前页面替换位置为链表头
      // 将mm的私有成员指针指向pra_list_head，用于后续的页面替换算法操作
      //cprintf(" mm->sm_priv %x in fifo_init_mm\n",mm->sm_priv);
+     list_init(&pra_list_head);
+     curr_ptr = &pra_list_head;
+     mm->sm_priv = &pra_list_head;
      return 0;
 }
 /*
@@ -50,10 +53,13 @@ _clock_map_swappable(struct mm_struct *mm, uintptr_t addr, struct Page *page, in
  
     assert(entry != NULL && curr_ptr != NULL);
     //record the page access situlation
-    /*LAB3 EXERCISE 4: YOUR CODE*/ 
+    /*LAB3 EXERCISE 4: 2113997*/ 
     // link the most recent arrival page at the back of the pra_list_head qeueue.
     // 将页面page插入到页面链表pra_list_head的末尾
     // 将页面的visited标志置为1，表示该页面已被访问
+    list_entry_t *head=(list_entry_t*) mm->sm_priv;
+    list_add(head, entry);
+    page->visited = 1;
     return 0;
 }
 /*
@@ -70,12 +76,26 @@ _clock_swap_out_victim(struct mm_struct *mm, struct Page ** ptr_page, int in_tic
      //(1)  unlink the  earliest arrival page in front of pra_list_head qeueue
      //(2)  set the addr of addr of this page to ptr_page
     while (1) {
-        /*LAB3 EXERCISE 4: YOUR CODE*/ 
+        /*LAB3 EXERCISE 4: 2113997*/ 
         // 编写代码
         // 遍历页面链表pra_list_head，查找最早未被访问的页面
         // 获取当前页面对应的Page结构指针
         // 如果当前页面未被访问，则将该页面从页面链表中删除，并将该页面指针赋值给ptr_page作为换出页面
         // 如果当前页面已被访问，则将visited标志置为0，表示该页面已被重新访问
+        if(curr_ptr == head){
+            curr_ptr = list_prev(curr_ptr);
+            continue;
+        }
+        struct Page* curr_page = le2page(curr_ptr,pra_page_link);
+        if(curr_page->visited == 0){
+            cprintf("curr_ptr %p\n", curr_ptr);
+            curr_ptr = list_prev(curr_ptr);
+            list_del(list_next(curr_ptr));
+            *ptr_page = curr_page;
+            return 0;
+        }
+        curr_page->visited = 0;
+        curr_ptr = list_prev(curr_ptr);
     }
     return 0;
 }
