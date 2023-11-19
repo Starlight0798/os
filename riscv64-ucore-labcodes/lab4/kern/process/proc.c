@@ -86,14 +86,14 @@ static struct proc_struct *
 alloc_proc(void) {
     struct proc_struct *proc = kmalloc(sizeof(struct proc_struct));
     if (proc != NULL) {
-    //LAB4:EXERCISE1 YOUR CODE
+    //LAB4:EXERCISE1 2113997 齐明杰
     /*
      * below fields in proc_struct need to be initialized
      *       enum proc_state state;                      // Process state
      *       int pid;                                    // Process ID
      *       int runs;                                   // the running times of Proces
      *       uintptr_t kstack;                           // Process kernel stack
-     *       volatile bool need_resched;                 // bool value: need to be rescheduled to release CPU?
+     *       volatile bol oneed_resched;                 // bool value: need to be rescheduled to release CPU?
      *       struct proc_struct *parent;                 // the parent process
      *       struct mm_struct *mm;                       // Process's memory management field
      *       struct context context;                     // Switch here to run process
@@ -102,7 +102,18 @@ alloc_proc(void) {
      *       uint32_t flags;                             // Process flag
      *       char name[PROC_NAME_LEN + 1];               // Process name
      */
-
+    proc->state = PROC_UNINIT;
+    proc->pid = -1;
+    proc->runs = 0;
+    proc->kstack = 0;
+    proc->need_resched = 0;
+    proc->parent = NULL;
+    proc->mm = NULL;
+    memset(&(proc->context), 0, sizeof(struct context));
+    proc->tf = NULL;
+    proc->cr3 = boot_cr3;
+    proc->flags = 0;
+    memset(proc->name, 0, PROC_NAME_LEN);
 
     }
     return proc;
@@ -163,7 +174,7 @@ get_pid(void) {
 void
 proc_run(struct proc_struct *proc) {
     if (proc != current) {
-        // LAB4:EXERCISE3 YOUR CODE
+        // LAB4:EXERCISE3 2113997 齐明杰
         /*
         * Some Useful MACROs, Functions and DEFINEs, you can use them in below implementation.
         * MACROs or Functions:
@@ -172,7 +183,15 @@ proc_run(struct proc_struct *proc) {
         *   lcr3():                   Modify the value of CR3 register
         *   switch_to():              Context switching between two processes
         */
-       
+       bool intr_flag;
+       struct proc_struct *prev = current, *next = proc;
+       local_intr_save(intr_flag);
+       {
+            current = proc;
+            lcr3(next->cr3);
+            switch_to(&(prev->context), &(next->context));
+       }
+       local_intr_restore(intr_flag);
     }
 }
 
@@ -273,7 +292,7 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
         goto fork_out;
     }
     ret = -E_NO_MEM;
-    //LAB4:EXERCISE2 YOUR CODE
+    //LAB4:EXERCISE2 2113997 齐明杰
     /*
      * Some Useful MACROs, Functions and DEFINEs, you can use them in below implementation.
      * MACROs or Functions:
@@ -298,8 +317,29 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     //    5. insert proc_struct into hash_list && proc_list
     //    6. call wakeup_proc to make the new child process RUNNABLE
     //    7. set ret vaule using child proc's pid
+    if ((proc = alloc_proc()) == NULL) {
+        goto fork_out;
+    }
+    proc->parent = current;//将子进程的父节点设置为当前进程
+    if (setup_kstack(proc)) {
+        goto bad_fork_cleanup_proc;
+    }
+    if(copy_mm(clone_flags, proc)){
+        goto bad_fork_cleanup_kstack;
+    }
+    copy_thread(proc, stack, tf);
+    bool intr_flag;
+    local_intr_save(intr_flag);//屏蔽中断，intr_flag置为1
+    {
+        proc->pid = get_pid();//获取当前进程PID
+        hash_proc(proc); //建立hash映射
+        list_add(&proc_list, &(proc->list_link));//加入进程链表
+        nr_process ++;//进程数加一
+    }
+    local_intr_restore(intr_flag);//恢复中断
 
-    
+    wakeup_proc(proc);
+    ret = proc->pid;//返回当前进程的PID
 
 fork_out:
     return ret;
