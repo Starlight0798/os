@@ -389,6 +389,12 @@ int copy_range(pde_t *to, pde_t *from, uintptr_t start, uintptr_t end,
              * (4) build the map of phy addr of  nage with the linear addr start
              */
 
+            void *src_kvaddr = page2kva(page); // Get the kernel virtual address of the source page.
+            void *dst_kvaddr = page2kva(npage); // Get the kernel virtual address of the destination page.
+
+            memcpy(dst_kvaddr, src_kvaddr, PGSIZE); // Copy the content of the source page to the destination page.
+
+            ret = page_insert(to, npage, start, perm); // Insert the destination page into the page table of the target process.
 
             assert(ret == 0);
         }
