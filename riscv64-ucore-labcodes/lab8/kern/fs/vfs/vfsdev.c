@@ -225,7 +225,7 @@ vfs_mount(const char *devname, int (*mountfunc)(struct device *dev, struct fs **
     int ret;
     lock_vdev_list();
     vfs_dev_t *vdev;
-    if ((ret = find_mount(devname, &vdev)) != 0) {
+    if ((ret = find_mount(devname, &vdev)) != 0) { // 根据设备名找对应的inode
         goto out;
     }
     if (vdev->fs != NULL) {
@@ -235,7 +235,7 @@ vfs_mount(const char *devname, int (*mountfunc)(struct device *dev, struct fs **
     assert(vdev->devname != NULL && vdev->mountable);
 
     struct device *dev = vop_info(vdev->devnode, device);
-    if ((ret = mountfunc(dev, &(vdev->fs))) == 0) {
+    if ((ret = mountfunc(dev, &(vdev->fs))) == 0) { // 调用mountfunc函数,此处传入sfs_do_mount
         assert(vdev->fs != NULL);
         cprintf("vfs: mount %s.\n", vdev->devname);
     }

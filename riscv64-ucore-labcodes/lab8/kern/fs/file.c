@@ -154,7 +154,7 @@ file_testfd(int fd, bool readable, bool writable) {
 
 // open file
 int
-file_open(char *path, uint32_t open_flags) {
+file_open(char *path, uint32_t open_flags) { // 给这个即将打开的文件分配一个file数据结构的变量
     bool readable = 0, writable = 0;
     switch (open_flags & O_ACCMODE) {
     case O_RDONLY: readable = 1; break;
@@ -167,11 +167,11 @@ file_open(char *path, uint32_t open_flags) {
     }
     int ret;
     struct file *file;
-    if ((ret = fd_array_alloc(NO_FD, &file)) != 0) {
+    if ((ret = fd_array_alloc(NO_FD, &file)) != 0) { // 在当前进程分配file descriptor
         return ret;
     }
     struct inode *node;
-    if ((ret = vfs_open(path, open_flags, &node)) != 0) {
+    if ((ret = vfs_open(path, open_flags, &node)) != 0) { // 打开文件的工作在vfs_open完成
         fd_array_free(file);
         return ret;
     }
@@ -188,7 +188,7 @@ file_open(char *path, uint32_t open_flags) {
     file->node = node;
     file->readable = readable;
     file->writable = writable;
-    fd_array_open(file);
+    fd_array_open(file); // 设置该文件的状态为“打开”
     return file->fd;
 }
 

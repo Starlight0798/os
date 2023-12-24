@@ -8,7 +8,7 @@
 #include <assert.h>
 
 void
-sem_init(semaphore_t *sem, int value) {
+sem_init(semaphore_t *sem, int value) { // 初始化信号量对象
     sem->value = value;
     wait_queue_init(&(sem->wait_queue));
 }

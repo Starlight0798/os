@@ -110,6 +110,7 @@ disk0_ioctl(struct device *dev, int op, void *data) {
 
 static void
 disk0_device_init(struct device *dev) {
+    // 确保每个磁盘块都是整数倍的扇区大小
     static_assert(DISK0_BLKSIZE % SECTSIZE == 0);
     if (!ide_device_valid(DISK0_DEV_NO)) {
         panic("disk0 device isn't available.\n");
@@ -121,8 +122,9 @@ disk0_device_init(struct device *dev) {
     dev->d_io = disk0_io;
     dev->d_ioctl = disk0_ioctl;
     sem_init(&(disk0_sem), 1);
-
+    // 确保缓冲区大小是磁盘块大小的整数倍
     static_assert(DISK0_BUFSIZE % DISK0_BLKSIZE == 0);
+    // 分配缓冲区内存
     if ((disk0_buffer = kmalloc(DISK0_BUFSIZE)) == NULL) {
         panic("disk0 alloc buffer failed.\n");
     }
