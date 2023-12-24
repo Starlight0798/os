@@ -24,7 +24,7 @@ __alloc_fs(int type) {
 
 // vfs_init -  vfs initialize
 void
-vfs_init(void) {
+vfs_init(void) { // 建立了一个双向链表vdev_list，为后续具体设备（键盘、串口、磁盘）以文件的形式呈现建立查找访问通道
     sem_init(&bootfs_sem, 1);
     vfs_devlist_init();
 }
