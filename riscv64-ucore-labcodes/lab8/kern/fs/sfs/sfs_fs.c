@@ -124,6 +124,16 @@ sfs_init_read(struct device *dev, uint32_t blkno, void *blk_buffer) {
  *      (1) get data addr in bitmap
  *      (2) read dev into iobuf
  */
+/*
+* 初始化空闲块映射表
+*
+* \param dev 设备结构体指针
+* \param freemap 空闲块映射表指针
+* \param blkno 块号
+* \param nblks 需要初始化的块数
+* \param blk_buffer 块缓冲区指针
+* \return 返回初始化结果，成功返回0，失败返回错误码
+*/
 static int
 sfs_init_freemap(struct device *dev, struct bitmap *freemap, uint32_t blkno, uint32_t nblks, void *blk_buffer) {
     size_t len;

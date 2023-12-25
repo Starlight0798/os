@@ -15,38 +15,36 @@ struct bitmap {
 };
 
 // bitmap_create - allocate a new bitmap object.
-struct bitmap *
-bitmap_create(uint32_t nbits) {
-    static_assert(WORD_BITS != 0);
-    assert(nbits != 0 && nbits + WORD_BITS > nbits);
+struct bitmap *bitmap_create(uint32_t nbits) {
+    static_assert(WORD_BITS != 0);  
+    assert(nbits != 0 && nbits + WORD_BITS > nbits);  
 
-    struct bitmap *bitmap;
-    if ((bitmap = kmalloc(sizeof(struct bitmap))) == NULL) {
+    struct bitmap *bitmap;  
+    if ((bitmap = kmalloc(sizeof(struct bitmap))) == NULL) {  
         return NULL;
     }
 
-    uint32_t nwords = ROUNDUP_DIV(nbits, WORD_BITS);
-    WORD_TYPE *map;
-    if ((map = kmalloc(sizeof(WORD_TYPE) * nwords)) == NULL) {
-        kfree(bitmap);
+    uint32_t nwords = ROUNDUP_DIV(nbits, WORD_BITS);  // 计算需要的word数量，使用ROUNDUP_DIV函数对nbits除以WORD_BITS进行向上取整
+    WORD_TYPE *map;  
+    if ((map = kmalloc(sizeof(WORD_TYPE) * nwords)) == NULL) {  
+        kfree(bitmap);  
         return NULL;
     }
 
-    bitmap->nbits = nbits, bitmap->nwords = nwords;
-    bitmap->map = memset(map, 0xFF, sizeof(WORD_TYPE) * nwords);
+    bitmap->nbits = nbits, bitmap->nwords = nwords;  // 将nbits和nwords赋值给bitmap结构体的nbits和nwords成员
+    bitmap->map = memset(map, 0xFF, sizeof(WORD_TYPE) * nwords);  
 
-    /* mark any leftover bits at the end in use(0) */
-    if (nbits != nwords * WORD_BITS) {
-        uint32_t ix = nwords - 1, overbits = nbits - ix * WORD_BITS;
+    /* 在剩下的位中，标记未使用的位为0 ) */
+    if (nbits != nwords * WORD_BITS) {  
+        uint32_t ix = nwords - 1, overbits = nbits - ix * WORD_BITS;  
+        assert(nbits / WORD_BITS == ix);  
+        assert(overbits > 0 && overbits < WORD_BITS);  
 
-        assert(nbits / WORD_BITS == ix);
-        assert(overbits > 0 && overbits < WORD_BITS);
-
-        for (; overbits < WORD_BITS; overbits ++) {
-            bitmap->map[ix] ^= (1 << overbits);
+        for (; overbits < WORD_BITS; overbits++) {  
+            bitmap->map[ix] ^= (1 << overbits);  
         }
     }
-    return bitmap;
+    return bitmap;  
 }
 
 // bitmap_alloc - locate a cleared bit, set it, and return its index.

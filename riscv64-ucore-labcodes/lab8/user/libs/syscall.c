@@ -9,7 +9,7 @@
 #define MAX_ARGS            5
 
 static inline int
-syscall(uint64_t num, ...) {
+syscall(uint64_t num, ...) { // 用户态ecall进入trap.c/CAUSE_USER_ECALL
     va_list ap;
     va_start(ap, num);
     uint64_t a[MAX_ARGS];

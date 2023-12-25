@@ -148,8 +148,9 @@ static const struct inode_ops dev_node_ops = {
     } while (0)
 
 /* dev_init - Initialization functions for builtin vfs-level devices. */
+// 接收宏定义，调用dev_init_stdin, dev_init_stdout, dev_init_disk0三个函数
 void
-dev_init(void) {
+dev_init(void) { // 初始化stdin, stdout, disk0
    // init_device(null);
     init_device(stdin);
     init_device(stdout);

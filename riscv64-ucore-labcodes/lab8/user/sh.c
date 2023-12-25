@@ -102,7 +102,7 @@ reopen(int fd2, const char *filename, uint32_t open_flags) {
     }
     return ret < 0 ? ret : 0;
 }
-
+// 测试文件是否打开成功
 int
 testfile(const char *name) {
     int ret;
@@ -113,111 +113,114 @@ testfile(const char *name) {
     return 0;
 }
 
-int
-runcmd(char *cmd) {
-    static char argv0[BUFSIZE];
-    static const char *argv[EXEC_MAX_ARG_NUM + 1];//must be static!
+int runcmd(char *cmd) {
+    static char argv0[BUFSIZE]; // 存储命令字符串
+    static const char *argv[EXEC_MAX_ARG_NUM + 1]; // 存储命令参数字符串，必须为static
     char *t;
     int argc, token, ret, p[2];
+
 again:
     argc = 0;
+
     while (1) {
         switch (token = gettoken(&cmd, &t)) {
         case 'w':
             if (argc == EXEC_MAX_ARG_NUM) {
-                printf("sh error: too many arguments\n");
+                printf("sh error: too many arguments\n"); // 参数太多
                 return -1;
             }
-            argv[argc ++] = t;
+            argv[argc++] = t; 
             break;
         case '<':
             if (gettoken(&cmd, &t) != 'w') {
-                printf("sh error: syntax error: < not followed by word\n");
+                printf("sh error: syntax error: < not followed by word\n"); // 语法错误，<后面没有单词
                 return -1;
             }
             if ((ret = reopen(0, t, O_RDONLY)) != 0) {
-                return ret;
+                return ret; 
             }
             break;
         case '>':
             if (gettoken(&cmd, &t) != 'w') {
-                printf("sh error: syntax error: > not followed by word\n");
+                printf("sh error: syntax error: > not followed by word\n"); // 语法错误，>后面没有单词
                 return -1;
             }
             if ((ret = reopen(1, t, O_RDWR | O_TRUNC | O_CREAT)) != 0) {
-                return ret;
+                return ret; 
             }
             break;
         case '|':
-          //  if ((ret = pipe(p)) != 0) {
-          //      return ret;
-          //  }
+            // if ((ret = pipe(p)) != 0) {
+            //     return ret; // 创建pipe错误
+            // }
             if ((ret = fork()) == 0) {
-                close(0);
+                close(0); // 关闭标准输入
                 if ((ret = dup2(p[0], 0)) < 0) {
-                    return ret;
+                    return ret; // 复制文件描述符错误
                 }
-                close(p[0]), close(p[1]);
-                goto again;
+                close(p[0]), close(p[1]); // 关闭管道的两个描述符
+                goto again; // 重新执行again处的代码
             }
             else {
                 if (ret < 0) {
-                    return ret;
+                    return ret; 
                 }
-                close(1);
+                close(1); 
                 if ((ret = dup2(p[1], 1)) < 0) {
-                    return ret;
+                    return ret; 
                 }
-                close(p[0]), close(p[1]);
-                goto runit;
+                close(p[0]), close(p[1]); 
+                goto runit; 
             }
             break;
         case 0:
-            goto runit;
+            goto runit; 
         case ';':
             if ((ret = fork()) == 0) {
-                goto runit;
+                goto runit; 
             }
             else {
                 if (ret < 0) {
-                    return ret;
+                    return ret; 
                 }
-                waitpid(ret, NULL);
-                goto again;
+                waitpid(ret, NULL); 
+                goto again; 
             }
             break;
         default:
-            printf("sh error: bad return %d from gettoken\n", token);
+            printf("sh error: bad return %d from gettoken\n", token); 
             return -1;
         }
     }
 
 runit:
     if (argc == 0) {
-        return 0;
+        return 0; 
     }
     else if (strcmp(argv[0], "cd") == 0) {
         if (argc != 2) {
-            return -1;
+            return -1; 
         }
-        strcpy(shcwd, argv[1]);
-        return 0;
+        strcpy(shcwd, argv[1]); 
+        return 0; 
     }
     if ((ret = testfile(argv[0])) != 0) {
         if (ret != -E_NOENT) {
-            return ret;
+            return ret; 
         }
-        snprintf(argv0, sizeof(argv0), "/%s", argv[0]);
+        snprintf(argv0, sizeof(argv0), "/%s", argv[0]); // 生成文件路径
         argv[0] = argv0;
     }
-    argv[argc] = NULL;
-    return __exec(argv[0], argv);
+    argv[argc] = NULL; 
+    return __exec(argv[0], argv); // 执行文件命令
 }
 
 int
 main(int argc, char **argv) {
     cputs("user sh is running!!!");
     int ret, interactive = 1;
+    // cprintf("argc:%d\n",argc);
+    // argc经测试得到值为0
     if (argc == 2) {
         if ((ret = reopen(0, argv[1], O_RDONLY)) != 0) {
             return ret;
@@ -232,11 +235,11 @@ main(int argc, char **argv) {
     assert(shcwd != NULL);
 
     char *buffer;
-    while ((buffer = readline((interactive) ? "$ " : NULL)) != NULL) {
+    while ((buffer = readline((interactive) ? "$ " : NULL)) != NULL) { // 读取用户的输入内容
         shcwd[0] = '\0';
         int pid;
         if ((pid = fork()) == 0) {
-            ret = runcmd(buffer);
+            ret = runcmd(buffer); //
             exit(ret);
         }
         assert(pid >= 0);
